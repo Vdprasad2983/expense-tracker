@@ -12,7 +12,7 @@ st.set_page_config(page_title='Expense Tracker', layout='wide')
 # ---------------------
 # Configuration
 # ---------------------
-SHEET_URL = "https://docs.google.com/spreadsheets/d/19Bpfg04cACOQUEOAkfqEGuxL3TLoL8524l904KQayBA/edit?usp=sharing"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/19Bpfg04cACOQUEOAkfqEGuxL3TLoL8524l904KQayBA"
 WORKSHEET = 'sheet1'
 
 # ---------------------
