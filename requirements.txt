@@ -2,4 +2,3 @@ streamlit
 pandas
 reportlab
 st-gsheets-connection
-openpyxl
