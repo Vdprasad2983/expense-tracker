@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from utils import parse_date, DEFAULT_INCOME_CATS, DEFAULT_EXPENSE_CATS, ensure_numeric, calc_totals, append_row
+import pip
+pip.main(["install", "st-gsheets-connection"])
 from gsheets_handler import load_sheet, save_sheet
 from report import generate_monthly_pdf
 import io
