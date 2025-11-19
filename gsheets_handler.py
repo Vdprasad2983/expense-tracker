@@ -1,6 +1,8 @@
 # gsheets_handler.py
 import streamlit as st
 import pandas as pd
+import pip
+pip.main(["install", "st-gsheets-connection"])
 from st_gsheets_connection import GSheetsConnection
 from typing import Tuple
 
