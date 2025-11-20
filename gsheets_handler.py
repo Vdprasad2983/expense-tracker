@@ -1,4 +1,6 @@
 # gsheets_handler.py
+import subprocess, sys
+subprocess.run([sys.executable, "-m", "pip", "install", "st-gsheets-connection"])
 import streamlit as st
 import pandas as pd
 import pkgutil
