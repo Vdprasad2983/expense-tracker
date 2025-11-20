@@ -1,11 +1,8 @@
 # gsheets_handler.py
-import subprocess, sys
-subprocess.run([sys.executable, "-m", "pip", "install", "st-gsheets-connection"])
+
 import streamlit as st
 import pandas as pd
-import pkgutil
-print("st_gsheets_connection installed?", pkgutil.find_loader("st_gsheets_connection") is not None)
-from st_gsheets_connection import GSheetsConnection
+from streamlit_gsheets import GSheetsConnection
 from typing import Tuple
 
 
