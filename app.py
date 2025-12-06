@@ -20,120 +20,97 @@ from report import generate_monthly_pdf
 st.set_page_config(page_title='Expense Tracker — Modern', layout='wide')
 
 # Inject lightweight CSS for a modern look
-premium_css = """
+enterprise_css = """
 <style>
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* Global ------------------------------------------------------- */
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif !important;
-    background: #0b0f19 !important; 
-    color: #e5e5e5 !important;
+html, body, [class*="css"]  {
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f7fb;
+    color: #1b1f23;
 }
 
-/* Top Title ---------------------------------------------------- */
-h1, h2, h3 {
-    font-weight: 600 !important;
-    letter-spacing: -0.5px;
+/* Top title */
+.header-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1b1f23;
+    margin-bottom: 5px;
+}
+.header-subtitle {
+    font-size: 16px;
+    color: #6a737d;
+    margin-bottom: 25px;
 }
 
-/* Page container ---------------------------------------------- */
-.main {
-    padding: 0 2rem !important;
-}
-
-/* Navbar ------------------------------------------------------- */
+/* Navigation Tabs */
 .stTabs [data-baseweb="tab"] {
-    color: #9ca3af !important;
-    font-size: 15.5px !important;
-    padding: 12px 22px !important;
-    font-weight: 500 !important;
+    font-weight: 600;
+    color: #6a737d;
+    padding: 10px 18px;
+    font-size: 16px;
+}
+.stTabs [aria-selected="true"] {
+    color: #000 !important;
+    border-bottom: 3px solid #4f46e5 !important; /* Premium Violet */
+}
+
+/* Cards */
+.card {
+    padding: 20px;
+    border-radius: 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
     transition: 0.2s;
 }
-
-.stTabs [aria-selected="true"] {
-    color: #ffffff !important;
-    border-bottom: 3px solid #7f5af0 !important;
-    font-weight: 600 !important;
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px rgba(0,0,0,0.08);
 }
 
-/* Metric Cards ------------------------------------------------ */
-.metric-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255,255,255,0.12);
-    padding: 26px;
-    border-radius: 18px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(14px);
-    transition: 0.25s ease;
+/* Metrics */
+.metric-value {
+    font-size: 26px;
+    font-weight: 700;
+}
+.metric-label {
+    font-size: 14px;
+    color: #6a737d;
 }
 
-.metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0px 12px 32px rgba(0,0,0,0.4);
+/* Buttons */
+.stButton>button {
+    background: #4f46e5;
+    color: white !important;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border:none;
+    font-weight: 600;
+    transition: 0.2s;
+}
+.stButton>button:hover {
+    background: #4338ca;
 }
 
-/* Buttons ----------------------------------------------------- */
-.stButton > button {
-    background: linear-gradient(90deg, #7f5af0, #00c6ff) !important;
-    color: #ffffff !important;
-    border-radius: 12px !important;
-    padding: 10px 26px !important;
-    border: none !important;
-    font-size: 15px !important;
-    font-weight: 500 !important;
-    transition: 0.25s ease-in-out;
-}
-
-.stButton > button:hover {
-    transform: scale(1.04);
-    opacity: 0.92;
-}
-
-/* Form inputs ------------------------------------------------- */
+/* Inputs clean design */
 input, select, textarea {
-    background: #111827 !important;
-    color: white !important;
-    padding: 10px !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    color: #111827 !important;
 }
 
-/* Dataframe styling ------------------------------------------- */
+/* Dataframe table */
 div[data-testid="dataframe"] {
-    border-radius: 14px !important;
-    overflow: hidden !important;
-    background-color: #111827 !important;
-}
-
-/* Download button --------------------------------------------- */
-.stDownloadButton > button {
-    background: #2cb67d !important;
-    color: white !important;
-    border-radius: 10px !important;
-    padding: 12px 20px !important;
-    font-size: 15px !important;
-}
-
-.stDownloadButton > button:hover {
-    opacity: 0.9;
-}
-
-/* Section separators ------------------------------------------ */
-hr {
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Animations -------------------------------------------------- */
-* {
-    transition: all 0.15s ease;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
 }
 
 </style>
 """
-
-st.markdown(premium_css, unsafe_allow_html=True)
+st.markdown(enterprise_css, unsafe_allow_html=True)
 # ---------------------
 # Config: Sheet and worksheet
 # ---------------------
