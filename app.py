@@ -6,6 +6,8 @@ from utils import parse_date, DEFAULT_INCOME_CATS, DEFAULT_EXPENSE_CATS, ensure_
 from gsheets_handler import load_sheet, save_sheet
 from report import generate_monthly_pdf
 import io
+from datetime import datetime
+import pytz
 
 st.set_page_config(page_title='Expense Tracker', layout='wide')
 
@@ -77,7 +79,11 @@ elif page == 'Add Entry':
         amount = col1.number_input('Amount (₹)', min_value=1.0, format='%.2f')
         category = col2.selectbox('Category', options=(st.session_state.income_cats if entry_type=='Income' else st.session_state.expense_cats))
         date_val = col1.date_input('Date', value=date.today(), max_value=date.today())
-        time_val = col2.time_input('Time')
+        utc_now = datetime.utcnow()
+        ist = pytz.timezone('Asia/Kolkata')
+        ist_time = utc_now.replace(tzinfo=pytz.utc).astimezone(ist).time()
+        time_val = col2.time_input('Time', value=ist_time)
+        
         desc = st.text_input('Description (optional)')
 
         submitted = st.form_submit_button('Add')
