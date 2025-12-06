@@ -20,83 +20,120 @@ from report import generate_monthly_pdf
 st.set_page_config(page_title='Expense Tracker — Modern', layout='wide')
 
 # Inject lightweight CSS for a modern look
-modern_css = """
+premium_css = """
 <style>
-/* Global */
-html, body, [class*="css"]  {
-    font-family: 'Inter', sans-serif;
-    background-color: #0d1117 !important;
-    color: #e6e6e6 !important;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Global ------------------------------------------------------- */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif !important;
+    background: #0b0f19 !important; 
+    color: #e5e5e5 !important;
 }
 
-/* Header Title */
+/* Top Title ---------------------------------------------------- */
 h1, h2, h3 {
+    font-weight: 600 !important;
+    letter-spacing: -0.5px;
+}
+
+/* Page container ---------------------------------------------- */
+.main {
+    padding: 0 2rem !important;
+}
+
+/* Navbar ------------------------------------------------------- */
+.stTabs [data-baseweb="tab"] {
+    color: #9ca3af !important;
+    font-size: 15.5px !important;
+    padding: 12px 22px !important;
+    font-weight: 500 !important;
+    transition: 0.2s;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #ffffff !important;
+    border-bottom: 3px solid #7f5af0 !important;
     font-weight: 600 !important;
 }
 
-/* Navbar - modern icons */
-.stTabs [data-baseweb="tab"] {
-    color: #bbb !important;
-    font-size: 17px;
-    padding: 10px 20px;
-}
-.stTabs [aria-selected="true"] {
-    color: #fff !important;
-    border-bottom: 3px solid #7b61ff !important;
+/* Metric Cards ------------------------------------------------ */
+.metric-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 26px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(14px);
+    transition: 0.25s ease;
 }
 
-/* Metric Cards */
-.metric-card {
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.08);
-    padding: 22px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-    transition: 0.25s;
-}
 .metric-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    box-shadow: 0px 12px 32px rgba(0,0,0,0.4);
 }
 
-/* Buttons */
-.stButton>button {
-    background: linear-gradient(90deg, #7f5af0, #2cb67d) !important;
-    color: white !important;
-    border:none !important;
-    padding: 10px 20px !important;
-    font-size: 16px;
-    border-radius: 12px;
-    transition: 0.2s;
-}
-.stButton>button:hover {
-    opacity: 0.85;
-    transform: scale(1.02);
+/* Buttons ----------------------------------------------------- */
+.stButton > button {
+    background: linear-gradient(90deg, #7f5af0, #00c6ff) !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 10px 26px !important;
+    border: none !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    transition: 0.25s ease-in-out;
 }
 
-/* Forms */
+.stButton > button:hover {
+    transform: scale(1.04);
+    opacity: 0.92;
+}
+
+/* Form inputs ------------------------------------------------- */
 input, select, textarea {
-    background-color: #161b22 !important;
-    border-radius: 10px !important;
+    background: #111827 !important;
     color: white !important;
+    padding: 10px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
 }
 
-/* Dataframe */
+/* Dataframe styling ------------------------------------------- */
 div[data-testid="dataframe"] {
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    background-color: #111827 !important;
 }
 
-/* PDF Button */
-.stDownloadButton>button {
+/* Download button --------------------------------------------- */
+.stDownloadButton > button {
     background: #2cb67d !important;
     color: white !important;
+    border-radius: 10px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+}
+
+.stDownloadButton > button:hover {
+    opacity: 0.9;
+}
+
+/* Section separators ------------------------------------------ */
+hr {
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Animations -------------------------------------------------- */
+* {
+    transition: all 0.15s ease;
 }
 
 </style>
 """
-st.markdown(modern_css, unsafe_allow_html=True)
+
+st.markdown(premium_css, unsafe_allow_html=True)
 # ---------------------
 # Config: Sheet and worksheet
 # ---------------------
