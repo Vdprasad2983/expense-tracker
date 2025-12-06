@@ -16,3 +16,4 @@ def load_sheet(sheet_url: str, worksheet: str = 'sheet1') -> Tuple[pd.DataFrame,
 def save_sheet(conn: GSheetsConnection, sheet_url: str, df: pd.DataFrame, worksheet: str = 'sheet1'):
     # Writes entire dataframe to the sheet (simple and reliable for small sheets)
     conn.update(spreadsheet=sheet_url, worksheet=worksheet, data=df)
+    st.cache_data.clear()
