@@ -20,25 +20,83 @@ from report import generate_monthly_pdf
 st.set_page_config(page_title='Expense Tracker — Modern', layout='wide')
 
 # Inject lightweight CSS for a modern look
-st.markdown(
-    """<style>
-    .header { display:flex; align-items:center; gap:16px }
-    .app-title { font-size:28px; font-weight:700; }
-    .subtitle { color: #6b7280; }
-    .card { background: linear-gradient(180deg, #ffffff, #fbfdff); padding:18px; border-radius:12px; box-shadow: 0 6px 18px rgba(32,33,36,0.06); }
-    .metric { font-size:20px; font-weight:600; }
-    .small { color:#6b7280; font-size:13px }
-    .topbar { margin-bottom: 10px }
-    .green { color: #16a34a }
-    .red { color: #dc2626 }
-    .blue { color: #2563eb }
-    .stButton>button { border-radius:10px; padding:8px 14px }
-    @media (max-width: 600px) { .app-title { font-size:20px } }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+modern_css = """
+<style>
+/* Global */
+html, body, [class*="css"]  {
+    font-family: 'Inter', sans-serif;
+    background-color: #0d1117 !important;
+    color: #e6e6e6 !important;
+}
 
+/* Header Title */
+h1, h2, h3 {
+    font-weight: 600 !important;
+}
+
+/* Navbar - modern icons */
+.stTabs [data-baseweb="tab"] {
+    color: #bbb !important;
+    font-size: 17px;
+    padding: 10px 20px;
+}
+.stTabs [aria-selected="true"] {
+    color: #fff !important;
+    border-bottom: 3px solid #7b61ff !important;
+}
+
+/* Metric Cards */
+.metric-card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 22px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    transition: 0.25s;
+}
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+/* Buttons */
+.stButton>button {
+    background: linear-gradient(90deg, #7f5af0, #2cb67d) !important;
+    color: white !important;
+    border:none !important;
+    padding: 10px 20px !important;
+    font-size: 16px;
+    border-radius: 12px;
+    transition: 0.2s;
+}
+.stButton>button:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+}
+
+/* Forms */
+input, select, textarea {
+    background-color: #161b22 !important;
+    border-radius: 10px !important;
+    color: white !important;
+}
+
+/* Dataframe */
+div[data-testid="dataframe"] {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* PDF Button */
+.stDownloadButton>button {
+    background: #2cb67d !important;
+    color: white !important;
+}
+
+</style>
+"""
+st.markdown(modern_css, unsafe_allow_html=True)
 # ---------------------
 # Config: Sheet and worksheet
 # ---------------------
