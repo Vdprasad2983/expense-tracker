@@ -1,162 +1,240 @@
-# app.py
+# Redesigned Expense Tracker — single-file Streamlit app (Tabs UI)
+# Save this as app.py (replace your existing app.py) and keep your gsheets_handler.py as-is.
+# This version uses tabs (Option A), modern layout, IST defaults, improved save logic,
+# immediate cache clearing, and nicer visuals (CSS injected).
+
 import streamlit as st
 import pandas as pd
-from datetime import date
-from utils import parse_date, DEFAULT_INCOME_CATS, DEFAULT_EXPENSE_CATS, ensure_numeric, calc_totals, append_row
-from gsheets_handler import load_sheet, save_sheet
-from report import generate_monthly_pdf
+from datetime import datetime, date
+import pytz
+import uuid
 import io
-from datetime import datetime
+from typing import Tuple
+
+# Import your existing gsheets helper (must remain in repo)
+from gsheets_handler import load_sheet, save_sheet
+from utils import parse_date, DEFAULT_INCOME_CATS, DEFAULT_EXPENSE_CATS, ensure_numeric, calc_totals, append_row
+from report import generate_monthly_pdf
+
+# Page config and theme-like settings
+st.set_page_config(page_title='Expense Tracker — Modern', layout='wide')
+
+# Inject lightweight CSS for a modern look
+st.markdown(
+    """<style>
+    .header { display:flex; align-items:center; gap:16px }
+    .app-title { font-size:28px; font-weight:700; }
+    .subtitle { color: #6b7280; }
+    .card { background: linear-gradient(180deg, #ffffff, #fbfdff); padding:18px; border-radius:12px; box-shadow: 0 6px 18px rgba(32,33,36,0.06); }
+    .metric { font-size:20px; font-weight:600; }
+    .small { color:#6b7280; font-size:13px }
+    .topbar { margin-bottom: 10px }
+    .green { color: #16a34a }
+    .red { color: #dc2626 }
+    .blue { color: #2563eb }
+    .stButton>button { border-radius:10px; padding:8px 14px }
+    @media (max-width: 600px) { .app-title { font-size:20px } }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ---------------------
+# Config: Sheet and worksheet
+# ---------------------
+# Use full sheet URL (recommended) or edit link
+SHEET_URL = st.secrets.get('sheet_url', "https://docs.google.com/spreadsheets/d/19Bpfg04cACOQUEOAkfqEGuxL3TLoL8524l904KQayBA")
+WORKSHEET = st.secrets.get('worksheet_name', 'sheet1')
+
+# ---------------------
+# Helper: IST default time
+# ---------------------
 import pytz
 
-st.set_page_config(page_title='Expense Tracker', layout='wide')
+def get_current_ist_time():
+    utc_now = datetime.utcnow()
+    ist = pytz.timezone('Asia/Kolkata')
+    return utc_now.replace(tzinfo=pytz.utc).astimezone(ist).time()
 
 # ---------------------
-# Configuration
+# Load data (safe)
 # ---------------------
-SHEET_URL = "https://docs.google.com/spreadsheets/d/19Bpfg04cACOQUEOAkfqEGuxL3TLoL8524l904KQayBA/edit#gid=0"
-WORKSHEET = 'sheet1'
+@st.cache_data(ttl=30)
+def cached_load(sheet_url: str, worksheet: str) -> Tuple[pd.DataFrame, object]:
+    df_raw, conn = load_sheet(sheet_url, worksheet)
+    return df_raw, conn
 
-# ---------------------
-# Load data
-# ---------------------
 with st.spinner('Loading data...'):
     try:
-        df_raw, conn = load_sheet(SHEET_URL, WORKSHEET)
-        df_raw['Date'] = df_raw['Date'].apply(parse_date)
+        df_raw, conn = cached_load(SHEET_URL, WORKSHEET)
+        # Ensure DataFrame columns are standardized
+        if not isinstance(df_raw, pd.DataFrame):
+            df_raw = pd.DataFrame(df_raw)
+        # Show debug if missing expected cols
+        # Normalize column names (strip)
+        df_raw.columns = [c.strip() for c in df_raw.columns]
+        # If Date exists, parse
+        if 'Date' in df_raw.columns:
+            df_raw['Date'] = df_raw['Date'].apply(parse_date)
+        else:
+            # ensure at least an empty df with expected columns
+            expected = ['Date','Time','Type','Income','Expense','Remaining Balance','Category','Income/Expense']
+            df_raw = df_raw.reindex(columns=expected)
         df = ensure_numeric(df_raw, ['Income','Expense','Remaining Balance'])
     except Exception as e:
         st.error('Failed to load Google Sheet. Make sure sheet URL and connection are configured.')
         st.exception(e)
         st.stop()
 
-# Initialize session state
+# Initialize categories in session state
 if 'income_cats' not in st.session_state:
-    st.session_state.income_cats = DEFAULT_INCOME_CATS.copy()
+    st.session_state.income_cats = list(DEFAULT_INCOME_CATS)
 if 'expense_cats' not in st.session_state:
-    st.session_state.expense_cats = DEFAULT_EXPENSE_CATS.copy()
+    st.session_state.expense_cats = list(DEFAULT_EXPENSE_CATS)
+
+# Top header
+col1, col2 = st.columns([4,1])
+with col1:
+    st.markdown('<div class="header"><div class="app-title">💼 Expense Tracker</div><div class="subtitle">A clean modern redesign</div></div>', unsafe_allow_html=True)
+with col2:
+    st.markdown('<div class="small">Connected to Google Sheets</div>', unsafe_allow_html=True)
+
+# Tabs navigation (Option A)
+tabs = st.tabs(["Dashboard","Add Entry","Categories","Reports","View Data"]) 
 
 # ---------------------
-# Layout: Sidebar Menu
+# DASHBOARD TAB
 # ---------------------
-st.sidebar.title('Expense Tracker')
-page = st.sidebar.selectbox('Go to', ['Dashboard','Add Entry','Categories','Reports','View Data'])
-
-# ---------------------
-# DASHBOARD
-# ---------------------
-if page == 'Dashboard':
-    st.title('📊 Dashboard')
+with tabs[0]:
+    st.subheader('Dashboard')
     totals = calc_totals(df)
-    col1, col2, col3 = st.columns(3)
-    col1.metric('Total Income', f"₹ {totals['income']:,.2f}")
-    col2.metric('Total Expense', f"₹ {totals['expense']:,.2f}")
-    col3.metric('Balance', f"₹ {totals['balance']:,.2f}")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="small">Total Income</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric green">₹ {totals["income"]:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="small">Total Expense</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric red">₹ {totals["expense"]:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="small">Balance</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric blue">₹ {totals["balance"]:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('---')
-    st.subheader('Income vs Expense')
+    st.subheader('Income vs Expense (by Date)')
     temp = df.copy()
-    temp['Date'] = pd.to_datetime(temp['Date'])
-    agg = temp.groupby('Date')[['Income','Expense']].sum()
-    st.line_chart(agg)
+    if temp['Date'].notna().any():
+        temp['Date'] = pd.to_datetime(temp['Date'])
+        agg = temp.groupby('Date')[['Income','Expense']].sum()
+        st.line_chart(agg)
+    else:
+        st.info('No date-stamped data available yet.')
 
-    st.subheader('Category Breakdown (Expenses)')
-    cat = df[df['Expense']>0].groupby('Category')['Expense'].sum().sort_values(ascending=False)
-    if not cat.empty:
+    st.subheader('Expenses by Category')
+    if 'Category' in df.columns and df['Expense'].sum() > 0:
+        cat = df[df['Expense']>0].groupby('Category')['Expense'].sum().sort_values(ascending=False)
         st.bar_chart(cat)
     else:
         st.info('No expense data yet.')
 
 # ---------------------
-# ADD ENTRY
+# ADD ENTRY TAB
 # ---------------------
-elif page == 'Add Entry':
-    st.title('➕ Add Entry')
+with tabs[1]:
+    st.subheader('Add Entry')
     entry_type = st.radio('Type', ['Income','Expense'], horizontal=True)
 
-    with st.form('entry_form', clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        amount = col1.number_input('Amount (₹)', min_value=1.0, format='%.2f')
-        category = col2.selectbox('Category', options=(st.session_state.income_cats if entry_type=='Income' else st.session_state.expense_cats))
-        date_val = col1.date_input('Date', value=date.today(), max_value=date.today())
-        utc_now = datetime.utcnow()
-        ist = pytz.timezone('Asia/Kolkata')
-        ist_time = utc_now.replace(tzinfo=pytz.utc).astimezone(ist).time()
-        time_val = col2.time_input('Time', value=ist_time)
-        
-        desc = st.text_input('Description (optional)')
+    # form without clear_on_submit, we'll clear on success
+    with st.form('entry_form'):
+        cols = st.columns(3)
+        amount = cols[0].number_input('Amount (₹)', min_value=0.0, format='%.2f')
+        category = cols[1].selectbox('Category', options=(st.session_state.income_cats if entry_type=='Income' else st.session_state.expense_cats))
+        date_val = cols[0].date_input('Date', value=date.today(), max_value=date.today())
+        time_val = cols[1].time_input('Time', value=get_current_ist_time())
+        desc = cols[2].text_input('Description (optional)')
 
-        submitted = st.form_submit_button('Add')
+        submitted = st.form_submit_button('Add Entry')
         if submitted:
-            # compute new remaining balance
+            # build row with unique id
             current_balance = calc_totals(df)['balance']
             new_balance = current_balance + amount if entry_type=='Income' else current_balance - amount
             row = {
+                'ID': str(uuid.uuid4())[:8],
                 'Date': date_val,
                 'Time': time_val.strftime('%H:%M'),
                 'Type': desc,
-                'Income': amount if entry_type=='Income' else 0,
-                'Expense': amount if entry_type=='Expense' else 0,
+                'Income': float(amount) if entry_type=='Income' else 0.0,
+                'Expense': float(amount) if entry_type=='Expense' else 0.0,
                 'Remaining Balance': new_balance,
                 'Category': category,
                 'Income/Expense': entry_type
             }
-            df2 = append_row(df, row)
-            df2['Date'] = df2['Date'].apply(parse_date)
+
+            # Save robustly: read fresh, append, write full
             try:
-                save_sheet(conn, SHEET_URL, df2, WORKSHEET)
-                st.success('Entry saved to Google Sheets ✅')
-                st.rerun()
+                # clear cache and reload fresh
+                st.cache_data.clear()
+                fresh, _ = load_sheet(SHEET_URL, WORKSHEET)
+                if not isinstance(fresh, pd.DataFrame):
+                    fresh = pd.DataFrame(fresh)
+                fresh.columns = [c.strip() for c in fresh.columns]
+                combined = pd.concat([fresh, pd.DataFrame([row])], ignore_index=True)
+                save_sheet(conn, SHEET_URL, combined, WORKSHEET)
+                st.success('Saved ✅')
+                # clear cache again and rerun to show updated values
+                st.cache_data.clear()
+                st.experimental_rerun()
             except Exception as e:
-                st.error('Failed to save — check connection')
+                st.error('Failed to save — check connection and permissions')
                 st.exception(e)
 
 # ---------------------
-# CATEGORIES
+# CATEGORIES TAB
 # ---------------------
-elif page == 'Categories':
-    st.title('🗂️ Manage Categories')
-    st.subheader('Income Categories')
-    with st.form('inc_cat_form'):
+with tabs[2]:
+    st.subheader('Manage Categories')
+    st.write('Income Categories')
+    with st.form('inc_cat'):
         new_inc = st.text_input('Add Income Category')
         if st.form_submit_button('Add Income Category') and new_inc:
             st.session_state.income_cats.append(new_inc.strip())
             st.success('Added')
-
     for i, c in enumerate(st.session_state.income_cats):
-        col1, col2 = st.columns([4,1])
-        col1.write(c)
-        if col2.button('Delete', key=f'del_inc_{i}'):
+        c1,c2 = st.columns([6,1])
+        c1.write(c)
+        if c2.button('Delete', key=f'del_inc_{i}'):
             st.session_state.income_cats.pop(i)
-            st.rerun()
+            st.experimental_rerun()
 
     st.markdown('---')
-    st.subheader('Expense Categories')
-    with st.form('exp_cat_form'):
+    st.write('Expense Categories')
+    with st.form('exp_cat'):
         new_exp = st.text_input('Add Expense Category')
         if st.form_submit_button('Add Expense Category') and new_exp:
             st.session_state.expense_cats.append(new_exp.strip())
             st.success('Added')
-
     for i, c in enumerate(st.session_state.expense_cats):
-        col1, col2 = st.columns([4,1])
-        col1.write(c)
-        if col2.button('Delete', key=f'del_exp_{i}'):
+        c1,c2 = st.columns([6,1])
+        c1.write(c)
+        if c2.button('Delete', key=f'del_exp_{i}'):
             st.session_state.expense_cats.pop(i)
-            st.rerun()
+            st.experimental_rerun()
 
 # ---------------------
-# REPORTS
+# REPORTS TAB
 # ---------------------
-elif page == 'Reports':
-    st.title('📅 Reports & Exports')
-    st.subheader('Monthly PDF Report')
-
+with tabs[3]:
+    st.subheader('Reports & Export')
     years = sorted(list({d.year for d in df['Date'] if hasattr(d, 'year')})) if not df['Date'].empty else [date.today().year]
     year = st.selectbox('Year', years, index=len(years)-1)
     month = st.selectbox('Month', list(range(1,13)), index=date.today().month-1)
 
-    if st.button('Generate PDF'):
+    if st.button('Generate Monthly PDF'):
         try:
             pdf_bytes = generate_monthly_pdf(df, int(year), int(month))
             st.download_button('Download PDF', data=pdf_bytes, file_name=f'monthly_{year}_{month:02d}.pdf', mime='application/pdf')
@@ -169,26 +247,26 @@ elif page == 'Reports':
     st.subheader('Export Data')
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button('Download CSV', data=csv, file_name='transactions.csv', mime='text/csv')
-    # Excel export
     towrite = io.BytesIO()
     df.to_excel(towrite, index=False, engine='openpyxl')
     towrite.seek(0)
     st.download_button('Download Excel', data=towrite, file_name='transactions.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 # ---------------------
-# VIEW DATA
+# VIEW DATA TAB
 # ---------------------
-elif page == 'View Data':
-    st.title('📋 Transactions')
+with tabs[4]:
+    st.subheader('Transactions')
     st.dataframe(df.sort_values('Date', ascending=False))
+
     st.markdown('---')
     st.subheader('Filter Transactions')
-    c1, c2, c3 = st.columns(3)
-    from_d = c1.date_input('From', value=(min(df['Date']) if not df['Date'].empty else date.today().replace(day=1)))
-    to_d = c2.date_input('To', value=(max(df['Date']) if not df['Date'].empty else date.today()))
-    cat_opts = ['All'] + sorted([c for c in df['Category'].unique() if c])
-    sel_cat = c3.selectbox('Category', cat_opts)
+    from_d = st.date_input('From', value=(min(df['Date']) if not df['Date'].empty else date.today().replace(day=1)))
+    to_d = st.date_input('To', value=(max(df['Date']) if not df['Date'].empty else date.today()))
+    sel_cat = st.selectbox('Category', ['All'] + sorted([c for c in df['Category'].unique() if c]))
     mask = (df['Date'] >= from_d) & (df['Date'] <= to_d)
     if sel_cat != 'All':
         mask &= (df['Category'] == sel_cat)
     st.dataframe(df[mask].sort_values('Date', ascending=False))
+
+# End of redesigned app
